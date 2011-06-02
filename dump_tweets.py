@@ -17,15 +17,19 @@
 ## AUTHOR'S WEBSITE: http://www.redaelli.org/matteo/
 
 #import argparse   # valid for python >= 2.7
+from datetime import datetime
+import calendar
 import getopt
 import HTMLParser
 import json
 import os.path
+import rfc822
 import sys
 import time
 import urllib
 import urllib2
-
+import MySQLdb
+ 
 def usage():
     print("Unknown option")
     
@@ -52,9 +56,10 @@ def dump_tweets(q, since_id=0, verbose=True, rpp=100, result_type = 'recent'):
     
         for tweet in json_response["results"]:
             id = tweet["id"]
+            timestamp = calendar.timegm(rfc822.parsedate(tweet["created_at"]))
             user = clean_string(tweet["from_user"])
             text = clean_string(tweet["text"])
-            row = str(id) + " : " + user + " : " + text
+            row = str(id) + " : " + str(timestamp) + " : " + user + " : " + text
             print row.encode('utf8')
         
         if "next_page" in json_response.keys():
