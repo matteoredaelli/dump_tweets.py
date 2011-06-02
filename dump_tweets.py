@@ -86,7 +86,7 @@ def dump_tweets(q, since_id=0, verbose=True, rpp=100, result_type = 'recent', db
             row = str(id) + " : " + str(timestamp) + " : " + from_user + " : " + text + " : " + iso_language_code
             print row.encode('utf8')
             if db_cursor != False:
-                sql_statement = "insert into %s (id, from_user, timestamp, text, iso_language_code) values (%d, '%s', %d, '%s', '%s')" %  (db_table, id, from_user,  timestamp, text.replace("'","\\'"), iso_language_code)
+                sql_statement = u"insert into %s (id, from_user, timestamp, text, iso_language_code) values (%d, '%s', %d, '%s', '%s')" %  (db_table, id, from_user,  timestamp, text.replace("'","\\'"), iso_language_code)
                 try:
                     db_cursor.execute(sql_statement.encode('utf8'))
                 except MySQLdb.Error, e:
@@ -198,7 +198,9 @@ def main():
             conn = MySQLdb.connect (host = db_host,
                                     user = db_user,
                                     passwd = db_pass,
-                                    db = db_name)
+                                    db = db_name,
+                                    charset = "utf8",
+                                    use_unicode=True)
             db_cursor = conn.cursor ()
         except MySQLdb.Error, e:
             print "Error %d: %s" % (e.args[0], e.args[1])
