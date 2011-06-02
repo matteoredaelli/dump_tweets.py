@@ -45,11 +45,11 @@ def usage():
     print "License    : %s" %  __LICENSE__
     print "Author(s)  : %s" %  __AUTHORS__
     print
-    print "USAGE: %s -q|--query string [-f|--file] [-i|--since_id number] [-v|--verbose] [-s|--slip number] [-d|--db dbhost:dbport:dbuser:dbpass:dbtable]" % __file__
+    print "USAGE: %s -q|--query string [-f|--file filename] [-i|--since_id number] [-v|--verbose] [-s|--slip number] [-d|--db dbhost:dbport:dbuser:dbpass:dbtable]" % __file__
     print
     print "       -q string: string is the search string"
     print "       -d string: the tweets are saved to a MySQL db. strig is like 'dbhost:dbport:dbuser:dbpass:dbtable'"
-    print "       -f       : max_id is saved to db, it will be used for incremental dumping after a restart"
+    print "       -f string: max_id is saved to a file, it will be used for incremental dumping after a restart"
     print "       -s number: the script runs forever, it retrives tweets each number seconds"
     print
 
@@ -87,8 +87,12 @@ def dump_tweets(q, since_id=0, verbose=True, rpp=100, result_type = 'recent', db
             print row.encode('utf8')
             if db_cursor != False:
                 sql_statement = "insert into %s (id, from_user, timestamp, text, iso_language_code) values (%d, '%s', %d, '%s', '%s')" %  (db_table, id, from_user,  timestamp, text.replace("'","\\'"), iso_language_code)
-                db_cursor.execute(sql_statement.encode('utf8'))
-                
+                try:
+                    db_cursor.execute(sql_statement.encode('utf8'))
+                except MySQLdb.Error, e:
+                    print >> sys.stderr, "Error %d: %s" % (e.args[0], e.args[1])
+                    print >> sys.stderr, "Skipping inserting this tweet to the DB"
+                    
         if "next_page" in json_response.keys():
             query = json_response["next_page"]
         else:
@@ -131,7 +135,7 @@ def id_to_file(id, filename):
     
 def main():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "d:fhi:q:s:v", ["db:", "file", "help", "query=", "since_id=", "sleep="])
+        opts, args = getopt.getopt(sys.argv[1:], "d:f:hi:q:s:v", ["db=", "file=", "help", "query=", "since_id=", "sleep="])
     except getopt.GetoptError, err:
         usage()
         sys.exit(2)
@@ -149,7 +153,7 @@ def main():
         elif o in ("-d", "--database"):
             db = string.split(a,":")
         elif o in ("-f", "--file"):
-            filename = True
+            filename = a
         elif o in ("-h", "--help"):
             usage()
             sys.exit()
@@ -167,8 +171,7 @@ def main():
         usage()
         sys.exit(3)
         
-    if filename:
-        filename = ".tweets_" + q
+    if filename != False:
         if os.path.isfile(filename):
             if verbose:
                 print >> sys.stderr, "Reading since_id from file " + filename
