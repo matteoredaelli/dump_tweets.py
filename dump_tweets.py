@@ -57,9 +57,11 @@ def dump_tweets(q, since_id=0, verbose=True, rpp=100, result_type = 'recent'):
         for tweet in json_response["results"]:
             id = tweet["id"]
             timestamp = calendar.timegm(rfc822.parsedate(tweet["created_at"]))
-            user = clean_string(tweet["from_user"])
+            from_user = clean_string(tweet["from_user"])
+            ##from_user_id = clean_string(tweet["from_user_id"])
             text = clean_string(tweet["text"])
-            row = str(id) + " : " + str(timestamp) + " : " + user + " : " + text
+            iso_language_code = clean_string(tweet["iso_language_code"])
+            row = str(id) + " : " + str(timestamp) + " : " + from_user + " : " + text + " : " + iso_language_code
             print row.encode('utf8')
         
         if "next_page" in json_response.keys():
