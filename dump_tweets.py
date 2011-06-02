@@ -13,8 +13,15 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-## AUTHOR:           matteo DOT redaelli AT libero DOT IT
+## AUTHOR:           matteo DOT redaelli AT libero DOT it
 ## AUTHOR'S WEBSITE: http://www.redaelli.org/matteo/
+
+## This file is part of the project dump_tweets.py, hosted at https://github.com/matteoredaelli/dump_tweets.py
+
+
+__VERSION__="1.0-SNAPSHOT"
+__AUTHORS__ = "Matteo Redaelli,  matteo DOT redaelli AT libero DOT it"
+__LICENSE__ = "GPLV3+"
 
 #import argparse   # valid for python >= 2.7
 from datetime import datetime
@@ -32,7 +39,20 @@ import urllib2
 import MySQLdb
  
 def usage():
-    print("Unknown option")
+    print
+    print "Software   : %s" %  __file__
+    print "Version    : %s" %  __VERSION__
+    print "License    : %s" %  __LICENSE__
+    print "Author(s)  : %s" %  __AUTHORS__
+    print
+    print "USAGE: %s -q|--query string [-f|--file] [-i|--since_id number] [-v|--verbose] [-s|--slip number] [-d|--db dbhost:dbport:dbuser:dbpass:dbtable]" % __file__
+    print
+    print "       -q string: string is the search string"
+    print "       -d string: the tweets are saved to a MySQL db. strig is like 'dbhost:dbport:dbuser:dbpass:dbtable'"
+    print "       -f       : max_id is saved to db, it will be used for incremental dumping after a restart"
+    print "       -s number: the script runs forever, it retrives tweets each number seconds"
+    print
+
     
 def clean_string(s):
     s = HTMLParser.HTMLParser().unescape(s)

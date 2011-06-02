@@ -1,5 +1,16 @@
 LICENSE: GPL v3+, see LICENSE file
 
-Sample Usage
+python dump_tweets.py -h
 
-python dump_tweets.py -q pirelli  -d localhost:3306:tweets:twitter:twitter:pirelli -f
+Software   : dump_tweets.py
+License    : GPLV3+
+Author(s)  : Matteo Redaelli,  matteo DOT redaelli AT libero DOT it
+
+USAGE: dump_tweets.py -q|--query string [-f|--file] [-i|--since_id number] [-v|--verbose] [-s|--slip number] [-d|--db dbhost:dbport:dbuser:dbpass:dbtable]
+
+       -q string: string is the search string
+       -d string: the tweets are saved to a MySQL db. strig is like 'dbhost:dbport:dbuser:dbpass:dbtable'
+       -f       : max_id is saved to db, it will be used for incremental dumping after a restart
+       -s number: the script runs forever, it retrives tweets each number seconds
+
+python dump_tweets.py -q pirelli  -d localhost:3306:tweets:twitter:twitter:tweets -f
