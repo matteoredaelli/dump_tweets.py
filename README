@@ -1,0 +1,5 @@
+LICENSE: GPL v3+, see LICENSE file
+
+Sample Usage
+
+python dump_tweets.py -q pirelli  -d localhost:3306:tweets:twitter:twitter:pirelli -f
