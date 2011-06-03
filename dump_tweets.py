@@ -67,6 +67,9 @@ def dump_tweets(q, since_id=0, verbose=True, rpp=100, result_type = 'recent', db
                                     'rpp'         : rpp,
                                     'result_type' : result_type
                                     })
+
+    max_id = 0
+    counter = 0
     
     while query != "":
         url = base_url + query
@@ -74,8 +77,11 @@ def dump_tweets(q, since_id=0, verbose=True, rpp=100, result_type = 'recent', db
         raw_response = urllib2.urlopen(url)
         json_response = json.load(raw_response)
         raw_response.close()
-    
-        for tweet in json_response["results"]:
+
+        all_tweets = json_response["results"]
+        counter = counter + len(all_tweets)
+        
+        for tweet in all_tweets:
             id = tweet["id"]
             timestamp = calendar.timegm(rfc822.parsedate(tweet["created_at"]))
             from_user = clean_string(tweet["from_user"])
@@ -98,17 +104,22 @@ def dump_tweets(q, since_id=0, verbose=True, rpp=100, result_type = 'recent', db
         else:
             max_id = json_response["max_id"]
             query = ""
-            result = max_id
-            
-    return max_id
+
+    result = dict()
+    result["max_id"] = max_id
+    result["counter"] = counter
+    return result
 
 
 def rep_dump_tweets(q, since_id=0, sleep=3600, verbose=True, rpp=100, result_type = 'recent', filename=False, db_cursor=False, db_table=False):
     while True:
         if verbose:
             print >> sys.stderr, "since_id = " + str(since_id)
-        max_id = dump_tweets(q=q, since_id=since_id, verbose=verbose, db_cursor=db_cursor, db_table=db_table)
+        result = dump_tweets(q=q, since_id=since_id, verbose=verbose, db_cursor=db_cursor, db_table=db_table)
+        max_id = result["max_id"]
+        counter = result["counter"]
         if verbose:
+            print >> sys.stderr, "retreived tweets = " + str(counter)
             print >> sys.stderr, "max_id = " + str(max_id)
         since_id = max_id
         if filename != False:
