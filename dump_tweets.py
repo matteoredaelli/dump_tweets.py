@@ -37,6 +37,7 @@ import time
 import urllib
 import urllib2
 import MySQLdb
+import re
  
 def usage():
     print
@@ -99,7 +100,9 @@ def dump_tweets(q, since_id=0, verbose=True, rpp=100, result_type = 'recent', db
                     print >> sys.stderr, "Error %d: %s" % (e.args[0], e.args[1])
                     print >> sys.stderr, "Skipping inserting this tweet to the DB"
                     
-        if "next_page" in json_response.keys():
+        print json_response["next_page"]
+
+        if "next_page" in json_response.keys() and re.search("page=15", json_response["next_page"]) != None:
             query = json_response["next_page"]
         else:
             max_id = json_response["max_id"]
@@ -229,3 +232,4 @@ def main():
     
 if __name__ == "__main__":
     main()
+
