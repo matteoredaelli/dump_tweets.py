@@ -14,3 +14,15 @@ USAGE: dump_tweets.py -q|--query string [-f|--file filename] [-i|--since_id numb
        -s number: the script runs forever, it retrives tweets each number seconds
 
 python dump_tweets.py -q pirelli  -d localhost:3306:tweets:twitter:twitter:tweets -f
+
+
+CREATE TABLE IF NOT EXISTS `tweets` (
+  `id` varchar(30) NOT NULL,
+  PRIMARY KEY(id)
+  `from_user` varchar(30) NOT NULL,
+  `timestamp` int(11) NOT NULL,
+  `text` varchar(250) NOT NULL,
+  `iso_language_code` char(2) default NULL,
+  `cleaned_text` varchar(150) default NULL
+) ENGINE=InooDB DEFAULT CHARSET=utf8;
+
