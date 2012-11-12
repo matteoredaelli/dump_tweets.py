@@ -13,16 +13,19 @@ USAGE: dump_tweets.py -q|--query string [-f|--file filename] [-i|--since_id numb
        -f string: max_id is saved to a file, it will be used for incremental dumping after a restart
        -s number: the script runs forever, it retrives tweets each number seconds
 
-python dump_tweets.py -q pirelli  -d localhost:3306:tweets:twitter:twitter:tweets -f
+python dump_tweets.py -q pirelli  -d localhost:3306:dbname:user:pwd:tablename -f filename
+ 
 
+DROP TABLE tweets;
 
 CREATE TABLE IF NOT EXISTS `tweets` (
   `id` varchar(30) NOT NULL,
-  PRIMARY KEY(id)
+  PRIMARY KEY(id),
   `from_user` varchar(30) NOT NULL,
   `timestamp` int(11) NOT NULL,
   `text` varchar(250) NOT NULL,
   `iso_language_code` char(2) default NULL,
-  `cleaned_text` varchar(150) default NULL
-) ENGINE=InooDB DEFAULT CHARSET=utf8;
+  geo_lat double(10,6) default NULL,
+  geo_long double(10,6) default NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

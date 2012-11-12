@@ -66,13 +66,13 @@ def dump_tweets(q, since_id=0, verbose=True, rpp=100, result_type = 'recent', db
     query = "?" + urllib.urlencode({'q' : q,
                                     'since_id'    : since_id,
                                     'rpp'         : rpp,
-                                    'result_type' : result_type
+                                    'result_type' : result_type,
+                                    'page'        : 1
                                     })
 
-    max_id = 0
-    counter = 0
+    max_id = counter = 0
     
-    while query != "":
+    for c in range(1, 15):
         url = base_url + query
         print >> sys.stderr, url
         raw_response = urllib2.urlopen(url)
@@ -88,25 +88,34 @@ def dump_tweets(q, since_id=0, verbose=True, rpp=100, result_type = 'recent', db
             from_user = clean_string(tweet["from_user"])
             ##from_user_id = clean_string(tweet["from_user_id"])
             text = clean_string(tweet["text"])
-            iso_language_code = ""
-            ##iso_language_code = tweet["iso_language_code"]
+            ##iso_language_code = ""
+            iso_language_code = tweet["iso_language_code"]
+
+            ## "geo":{"coordinates":[48.748530,2.448800],"type":"Point"}
+            if tweet["geo"]:
+                geo_lat = tweet["geo"]["coordinates"][0]
+                geo_long =  tweet["geo"]["coordinates"][1]
+            else:
+                geo_lat = 0.0
+                geo_long = 0.0
             row = str(id) + " : " + str(timestamp) + " : " + from_user + " : " + text + " : " + iso_language_code
             print row.encode('utf8')
             if db_cursor != False:
-                sql_statement = u"insert into %s (id, from_user, timestamp, text, iso_language_code) values (%d, '%s', %d, '%s', '%s')" %  (db_table, id, from_user,  timestamp, text.replace("'","\\'"), iso_language_code)
+                sql_statement = u"""insert into %s (id, from_user, timestamp, text, iso_language_code, geo_lat, geo_long) values (%d, '%s', %d, '%s', '%s', %f, %f)""" %  (db_table, id, from_user, timestamp, text.replace("'","\\'"), iso_language_code, geo_lat, geo_long)
+                print >> sys.stderr, sql_statement
                 try:
                     db_cursor.execute(sql_statement.encode('utf8'))
                 except MySQLdb.Error, e:
                     print >> sys.stderr, "Error %d: %s" % (e.args[0], e.args[1])
                     print >> sys.stderr, "Skipping inserting this tweet to the DB"
                     
-        print json_response["next_page"]
+        ##print json_response["next_page"]
 
-        if "next_page" in json_response.keys() and re.search("page=15", json_response["next_page"]) != None:
+        if "next_page" in json_response.keys():
             query = json_response["next_page"]
         else:
             max_id = json_response["max_id"]
-            query = ""
+            break
 
     result = dict()
     result["max_id"] = max_id
@@ -215,7 +224,7 @@ def main():
                                     db = db_name,
                                     charset = "utf8",
                                     use_unicode=True)
-            db_cursor = conn.cursor ()
+            db_cursor = conn.cursor()
         except MySQLdb.Error, e:
             print "Error %d: %s" % (e.args[0], e.args[1])
             
@@ -227,6 +236,7 @@ def main():
                     filename=filename,
                     db_cursor = db_cursor,
                     db_table=db_table)
+    db_cursor.connection.commit()
     db_cursor.close()
     conn.close()
     
