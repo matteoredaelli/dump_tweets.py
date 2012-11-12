@@ -77,6 +77,7 @@ def dump_tweets(q, since_id=0, verbose=True, rpp=100, result_type = 'recent', db
         print >> sys.stderr, url
         raw_response = urllib2.urlopen(url)
         json_response = json.load(raw_response)
+        max_id = json_response["max_id"]
         raw_response.close()
 
         all_tweets = json_response["results"]
@@ -114,7 +115,6 @@ def dump_tweets(q, since_id=0, verbose=True, rpp=100, result_type = 'recent', db
         if "next_page" in json_response.keys():
             query = json_response["next_page"]
         else:
-            max_id = json_response["max_id"]
             break
 
     result = dict()
