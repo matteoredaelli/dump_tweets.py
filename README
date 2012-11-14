@@ -6,17 +6,10 @@ Software   : dump_tweets.py
 License    : GPLV3+
 Author(s)  : Matteo Redaelli,  matteo DOT redaelli AT libero DOT it
 
-USAGE: dump_tweets.py -q|--query string [-f|--file filename] [-i|--since_id number] [-v|--verbose] [-s|--slip number] [-d|--db dbhost:dbport:dbuser:dbpass:dbtable]
+USAGE: dump_tweets.py -h
 
-       -q string: string is the search string
-       -d string: the tweets are saved to a MySQL db. strig is like 'dbhost:dbport:dbuser:dbpass:dbtable'
-       -f string: max_id is saved to a file, it will be used for incremental dumping after a restart
-       -s number: the script runs forever, it retrives tweets each number seconds
 
-python dump_tweets.py -q pirelli  -d localhost:3306:dbname:user:pwd:tablename -f filename
- 
-
-DROP TABLE tweets;
+The tweets will be saved in a table like:
 
 CREATE TABLE IF NOT EXISTS `tweets` (
   `id` varchar(30) NOT NULL,

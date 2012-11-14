@@ -39,6 +39,30 @@ import urllib2
 import MySQLdb
 import re
  
+def create_table(db_cursor, tablename):
+    sql_statement = """CREATE TABLE %s (
+  id varchar(30) NOT NULL,
+  PRIMARY KEY(id),
+  from_user varchar(30) NOT NULL,
+  timestamp int(11) NOT NULL,
+  text varchar(250) NOT NULL,
+  iso_language_code char(2) default NULL,
+  geo_lat double(10,6) default NULL,
+  geo_long double(10,6) default NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8""" % (tablename)
+    db_cursor.execute(sql_statement.encode('utf8'))
+
+def drop_table(db_cursor, tablename):
+    sql_statement = """DROP TABLE %s""" % (tablename)
+    db_cursor.execute(sql_statement.encode('utf8'))
+
+def my_exit(conn=False, db_cursor = False):
+    if db_cursor != False:
+        db_cursor.close()
+    if conn != False:
+        conn.close()
+    sys.exit(1)
+
 def usage():
     print
     print "Software   : %s" %  __file__
@@ -46,7 +70,7 @@ def usage():
     print "License    : %s" %  __LICENSE__
     print "Author(s)  : %s" %  __AUTHORS__
     print
-    print "USAGE: %s -q|--query string [-f|--file filename] [-i|--since_id number] [-v|--verbose] [-s|--slip number] [-d|--db dbhost:dbport:dbuser:dbpass:dbtable]" % __file__
+    print "USAGE: %s -q|--query string [-f|--file filename] [-i|--since_id number] [-v|--verbose] [-s|--slip number] [-d|--db dbhost:dbport:dbuser:dbpass:dbtable] [-C|--create-table] [-D|--drop-table]" % __file__
     print
     print "       -q string: string is the search string"
     print "       -d string: the tweets are saved to a MySQL db. strig is like 'dbhost:dbport:dbuser:dbpass:dbtable'"
@@ -54,7 +78,6 @@ def usage():
     print "       -s number: the script runs forever, it retrives tweets each number seconds"
     print
 
-    
 def clean_string(s):
     s = HTMLParser.HTMLParser().unescape(s)
     s = urllib.unquote(s)
@@ -158,7 +181,7 @@ def id_to_file(id, filename):
     
 def main():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "d:f:hi:q:s:v", ["db=", "file=", "help", "query=", "since_id=", "sleep="])
+        opts, args = getopt.getopt(sys.argv[1:], "CDd:f:hi:q:s:v", ["create-table", "drop-table", "db=", "file=", "help", "query=", "since_id=", "sleep="])
     except getopt.GetoptError, err:
         usage()
         sys.exit(2)
@@ -166,8 +189,8 @@ def main():
     q = ""
     since_id = 0  
     sleep = 0
-    db = False
-    filename = False
+    db = conn = db_cursor = db_table = False
+    filename = tablename = action = False
     verbose = False
     
     for o, a in opts:
@@ -186,19 +209,12 @@ def main():
             q = a
         elif o in ("-s", "--sleep"):
             sleep = int(a)
+        elif o in ("-C", "--create_table"):
+            action = "create"
+        elif o in ("-D", "--drop_table"):
+            action = "drop"
         else:
             assert False, "unhandled option"
-
-    if q == "":
-        print("Required -q option is missing. No search text no party!")
-        usage()
-        sys.exit(3)
-        
-    if filename != False:
-        if os.path.isfile(filename):
-            if verbose:
-                print >> sys.stderr, "Reading since_id from file " + filename
-            since_id = id_from_file(filename)
 
     db_cursor = False
     db_table = False
@@ -207,7 +223,6 @@ def main():
         if len(db) != 6:
             print("-d option is wrong.")
             usage()
-            sys.exit(4)
             
         db_host = db[0]
         db_port = db[1]
@@ -227,7 +242,30 @@ def main():
             db_cursor = conn.cursor()
         except MySQLdb.Error, e:
             print "Error %d: %s" % (e.args[0], e.args[1])
-            
+            usage()
+            my_exit()
+    
+    if action == "create":
+        create_table(db_cursor, db_table)
+        my_exit(conn=conn, db_cursor = db_cursor)
+
+
+    if action == "drop":
+        drop_table(db_cursor, db_table)
+        my_exit(conn=conn, db_cursor = db_cursor)
+
+    if q == "":
+        print("Required -q option is missing. No search text no party!")
+        usage()
+        my_exit(conn=conn, db_cursor = db_cursor)
+        
+    if filename != False:
+        if os.path.isfile(filename):
+            if verbose:
+                print >> sys.stderr, "Reading since_id from file " + filename
+            since_id = id_from_file(filename)
+
+        
     
     rep_dump_tweets(q=q,
                     since_id=since_id,
@@ -237,8 +275,7 @@ def main():
                     db_cursor = db_cursor,
                     db_table=db_table)
     db_cursor.connection.commit()
-    db_cursor.close()
-    conn.close()
+    my_exit(conn=conn, db_cursor = db_cursor)
     
 if __name__ == "__main__":
     main()
