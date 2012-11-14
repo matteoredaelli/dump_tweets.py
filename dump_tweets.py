@@ -129,6 +129,7 @@ def dump_tweets(q, since_id=0, verbose=True, rpp=100, result_type = 'recent', db
                 ##print >> sys.stderr, sql_statement
                 try:
                     db_cursor.execute(sql_statement.encode('utf8'))
+                    db_cursor.connection.commit()
                 except MySQLdb.Error, e:
                     print >> sys.stderr, "Error %d: %s" % (e.args[0], e.args[1])
                     print >> sys.stderr, "Skipping inserting this tweet to the DB"
@@ -274,7 +275,6 @@ def main():
                     filename=filename,
                     db_cursor = db_cursor,
                     db_table=db_table)
-    db_cursor.connection.commit()
     my_exit(conn=conn, db_cursor = db_cursor)
     
 if __name__ == "__main__":
