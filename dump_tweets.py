@@ -70,11 +70,12 @@ def usage():
     print "License    : %s" %  __LICENSE__
     print "Author(s)  : %s" %  __AUTHORS__
     print
-    print "USAGE: %s -q|--query string [-f|--file filename] [-i|--since_id number] [-v|--verbose] [-s|--slip number] [-d|--db dbhost:dbport:dbuser:dbpass:dbtable] [-C|--create-table] [-D|--drop-table]" % __file__
+    print "USAGE: %s -q|--query string [-f|--file filename] [-i|--since_id number] [-v|--verbose] [-s|--slip number] [-r|--result_type string] [-d|--db dbhost:dbport:dbuser:dbpass:dbtable] [-C|--create-table] [-D|--drop-table]" % __file__
     print
     print "       -q string: string is the search string"
     print "       -d string: the tweets are saved to a MySQL db. strig is like 'dbhost:dbport:dbuser:dbpass:dbtable'"
     print "       -f string: max_id is saved to a file, it will be used for incremental dumping after a restart"
+    print "       -r string: result_type"
     print "       -s number: the script runs forever, it retrives tweets each number seconds"
     print
 
@@ -84,20 +85,22 @@ def clean_string(s):
     s = s.strip()
     return s
 
-def dump_tweets(q, since_id=0, verbose=True, rpp=100, result_type = 'recent', db_cursor=False, db_table=False):
+def dump_tweets(q, since_id=0, verbose=True, rpp=100, result_type = 'mixed', db_cursor=False, db_table=False):
     base_url = "http://search.twitter.com/search.json"
     query = "?" + urllib.urlencode({'q' : q,
-                                    'since_id'    : since_id,
-                                    'rpp'         : rpp,
-                                    'result_type' : result_type,
-                                    'page'        : 1
+                                    'since_id'        : since_id,
+                                    'rpp'             : rpp,
+                                    'result_type'     : result_type,
+                                    'page'            : 1,
+                                    'include_entities': 1
                                     })
 
     max_id = counter = 0
     
     for c in range(1, 15):
         url = base_url + query
-        print >> sys.stderr, url
+        if verbose:
+            print >> sys.stderr, url
         raw_response = urllib2.urlopen(url)
         json_response = json.load(raw_response)
         max_id = json_response["max_id"]
@@ -107,6 +110,7 @@ def dump_tweets(q, since_id=0, verbose=True, rpp=100, result_type = 'recent', db
         counter = counter + len(all_tweets)
         
         for tweet in all_tweets:
+            print tweet
             id = tweet["id"]
             timestamp = calendar.timegm(rfc822.parsedate(tweet["created_at"]))
             from_user = clean_string(tweet["from_user"])
@@ -147,7 +151,7 @@ def dump_tweets(q, since_id=0, verbose=True, rpp=100, result_type = 'recent', db
     return result
 
 
-def rep_dump_tweets(q, since_id=0, sleep=3600, verbose=True, rpp=100, result_type = 'recent', filename=False, db_cursor=False, db_table=False):
+def rep_dump_tweets(q, since_id=0, sleep=3600, verbose=True, rpp=100, result_type = 'mixed', filename=False, db_cursor=False, db_table=False):
     while True:
         if verbose:
             print >> sys.stderr, "since_id = " + str(since_id)
@@ -182,17 +186,21 @@ def id_to_file(id, filename):
     
 def main():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "CDd:f:hi:q:s:v", ["create-table", "drop-table", "db=", "file=", "help", "query=", "since_id=", "sleep="])
+        opts, args = getopt.getopt(sys.argv[1:], "CDd:f:hi:q:r:s:v", 
+                                   ["create-table", "drop-table", "db=", "file=", "help", "query=", "result_type=", "since_id=", "sleep=", "verbose"])
     except getopt.GetoptError, err:
         usage()
         sys.exit(2)
 
     q = ""
-    since_id = 0  
+    since_id = 0
+    result_type = "mixed"
     sleep = 0
-    db = conn = db_cursor = db_table = False
     filename = tablename = action = False
     verbose = False
+
+    db = conn = db_cursor = db_table = False
+
     
     for o, a in opts:
         if o == "-v":
@@ -208,6 +216,8 @@ def main():
             since_id = int(a)
         elif o in ("-q", "--query"):
             q = a
+        elif o in ("-r", "--result_type"):
+            result_type = a
         elif o in ("-s", "--sleep"):
             sleep = int(a)
         elif o in ("-C", "--create_table"):
@@ -264,14 +274,13 @@ def main():
         if os.path.isfile(filename):
             if verbose:
                 print >> sys.stderr, "Reading since_id from file " + filename
-            since_id = id_from_file(filename)
-
-        
+            since_id = id_from_file(filename) 
     
     rep_dump_tweets(q=q,
                     since_id=since_id,
                     sleep=sleep,
                     verbose=verbose,
+                    result_type=result_type,
                     filename=filename,
                     db_cursor = db_cursor,
                     db_table=db_table)
